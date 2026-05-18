@@ -151,3 +151,46 @@ class ApiKey(Base):
     
     def __repr__(self):
         return f"<ApiKey {self.key[:8]}...>"
+        # В конец файла, после класса ApiKey
+
+class SupportTicket(Base):
+    __tablename__ = "support_tickets"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    
+    subject = Column(String(200), nullable=False)
+    status = Column(String(50), default="open")  # open, in_progress, closed
+    priority = Column(String(50), default="normal")  # low, normal, high, urgent
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    closed_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Relationships
+    messages = relationship("SupportMessage", back_populates="ticket", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<SupportTicket {self.id} - {self.status}>"
+
+class SupportMessage(Base):
+    __tablename__ = "support_messages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    ticket_id = Column(Integer, ForeignKey("support_tickets.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    
+    message = Column(Text, nullable=False)
+    is_admin_reply = Column(Boolean, default=False)
+    
+    # Attachments
+    attachment_url = Column(String(500), nullable=True)
+    attachment_type = Column(String(50), nullable=True)  # image, file
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    ticket = relationship("SupportTicket", back_populates="messages")
+    
+    def __repr__(self):
+        return f"<SupportMessage {self.id}>"
